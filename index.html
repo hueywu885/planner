@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Premium Travel Planner (Stable Image Fix)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -15,76 +15,29 @@
             --sidebar-width: 280px;
         }
 
-        body {
+        /* 修復手機端縮放一致性 */
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
             background-color: var(--bg-body);
             color: var(--text-main);
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
             margin: 0;
         }
-	/* 強制導出時的美化邏輯 */
-.is-exporting .no-print,
-.is-exporting .btn,
-.is-exporting .btn-link,
-.is-exporting .fa-trash-can,
-.is-exporting .fa-xmark,
-.is-exporting .fa-copy,
-.is-exporting .fa-magnifying-glass,
-.is-exporting .fa-chevron-up,
-.is-exporting .fa-chevron-down,
-.is-exporting .sidebar,
-.is-exporting .mobile-nav,
-.is-exporting button {
-    display: none !important; /* 消失：刪除鈕、排序鈕、搜索鈕 */
-}
 
-/* 針對交通標籤 (截圖2) 的修復 */
-.is-exporting .transport-pill {
-    border: 1px solid #eee !important;
-    background: #f9f9f9 !important;
-    padding: 2px 8px !important;
-    box-shadow: none !important;
-}
-.is-exporting .transport-pill button { display: none !important; } /* 隱藏 X */
+        /* 導出樣式保留 */
+        .is-exporting .no-print, .is-exporting .btn, .is-exporting .btn-link, .is-exporting .fa-trash-can,
+        .is-exporting .fa-xmark, .is-exporting .fa-copy, .is-exporting .fa-magnifying-glass,
+        .is-exporting .fa-chevron-up, .is-exporting .fa-chevron-down, .is-exporting .sidebar,
+        .is-exporting .mobile-nav, .is-exporting button { display: none !important; }
+        .is-exporting .transport-pill { border: 1px solid #eee !important; background: #f9f9f9 !important; padding: 2px 8px !important; box-shadow: none !important; }
+        .is-exporting .transport-pill button { display: none !important; }
+        .is-exporting input, .is-exporting textarea { border: none !important; background: transparent !important; padding: 0 !important; box-shadow: none !important; pointer-events: none; }
+        .is-exporting .glass-card { border: 1px solid #f0f0f0 !important; box-shadow: none !important; margin-bottom: 25px !important; break-inside: avoid; }
+        .is-exporting .act-container { border-left: 2px solid #ff7e67 !important; margin-left: 20px !important; padding-left: 20px !important; }
+        .is-exporting .activity-wrapper::before { content: ""; position: absolute; left: -27px; top: 15px; width: 12px; height: 12px; background: #ff7e67; border-radius: 50%; z-index: 10; }
 
-/* 針對輸入框與佈局 (截圖3) 的修復 */
-.is-exporting input, 
-.is-exporting textarea {
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    pointer-events: none; /* 防止導出時出現游標 */
-}
-
-.is-exporting .glass-card {
-    border: 1px solid #f0f0f0 !important;
-    box-shadow: none !important;
-    margin-bottom: 25px !important;
-    break-inside: avoid; /* 防止卡片被分頁切斷 */
-}
-
-/* 增加時間軸視覺線（大幅提升專業感） */
-.is-exporting .act-container {
-    border-left: 2px solid #ff7e67 !important;
-    margin-left: 20px !important;
-    padding-left: 20px !important;
-}
-
-.is-exporting .activity-wrapper {
-    position: relative;
-}
-
-.is-exporting .activity-wrapper::before {
-    content: "";
-    position: absolute;
-    left: -27px; top: 15px;
-    width: 12px; height: 12px;
-    background: #ff7e67;
-    border-radius: 50%;
-    z-index: 10;
-}
-
-        /* 手機端側邊欄處理 */
+        /* 側邊欄優化 */
         .sidebar {
             width: var(--sidebar-width);
             background: white;
@@ -97,17 +50,8 @@
             z-index: 1050;
             transition: left 0.3s ease;
         }
-
         .sidebar.active { left: 0; }
-
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1040;
-        }
-
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1040; }
         .sidebar-overlay.active { display: block; }
 
         @media (min-width: 992px) {
@@ -115,9 +59,10 @@
             .mobile-nav { display: none; }
         }
 
+        /* 修復：手機導覽列同步縮放 */
         .mobile-nav {
             background: white;
-            padding: 15px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -125,22 +70,23 @@
             position: sticky;
             top: 0;
             z-index: 1000;
+            width: 100%;
+            box-sizing: border-box;
         }
 
-        /* 穩定背景區域：加入漂亮的默認漸層，防止灰色 */
         .hero-section {
             position: relative;
             height: 300px;
             border-radius: 0 0 40px 40px;
             overflow: hidden;
             display: flex; align-items: center; justify-content: center;
-            /* 默認漸層背景 */
             background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
             background-position: center;
             background-repeat: no-repeat;
             background-size: cover;
             transition: background-image 1.2s ease-in-out;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
         }
 
         #dynamicTitle {
@@ -148,137 +94,54 @@
             text-shadow: 0 4px 15px rgba(0,0,0,0.4); text-align: center; padding: 0 15px;
         }
 
-        /* 卡片設計 */
-        .content-container { padding: 20px; margin-top: -50px; }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.06);
-            padding: 25px; margin-bottom: 25px;
-        }
+        .content-container { padding: 20px; margin-top: -50px; width: 100%; box-sizing: border-box; }
+        .glass-card { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.06); padding: 25px; margin-bottom: 25px; }
 
-        /* 行程項目 */
-        .activity-item {
-            background: #fff; border-radius: 20px; padding: 20px;
-            border: 1px solid #f1f5f9; margin-bottom: 15px;
-            transition: all 0.2s ease;
-        }
-
-        .act-time {
-            font-weight: 800; color: var(--primary);
-            background: #fff5f2; border: none; border-radius: 10px;
-            width: 100%; text-align: center; padding: 10px;
-        }
-
-        .spot-input {
-            font-size: 1.2rem; font-weight: 600; border: none;
-            border-bottom: 2px solid #edf2f7; width: 100%; padding: 8px 0;
-            background: transparent;
-        }
-
+        .activity-item { background: #fff; border-radius: 20px; padding: 20px; border: 1px solid #f1f5f9; margin-bottom: 15px; transition: all 0.2s ease; }
+        .act-time { font-weight: 800; color: var(--primary); background: #fff5f2; border: none; border-radius: 10px; width: 100%; text-align: center; padding: 10px; }
+        .spot-input { font-size: 1.2rem; font-weight: 600; border: none; border-bottom: 2px solid #edf2f7; width: 100%; padding: 8px 0; background: transparent; }
         .spot-input:focus { outline: none; border-bottom-color: var(--primary); }
 
-        /* 交通膠囊 */
-        .transport-pill {
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50px;
-            padding: 6px 15px; display: inline-flex; align-items: center; gap: 10px;
-            font-size: 0.9rem; margin-top: 10px;
-        }
+        .transport-pill { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50px; padding: 6px 15px; display: inline-flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-top: 10px; }
 
-        .nav-tabs { 
-            flex-wrap: nowrap; overflow-x: auto; border: none; padding-bottom: 15px;
-            scrollbar-width: none;
-        }
+        .nav-tabs { flex-wrap: nowrap; overflow-x: auto; border: none; padding-bottom: 15px; scrollbar-width: none; }
         .nav-tabs::-webkit-scrollbar { display: none; }
+        .nav-link { white-space: nowrap; border: none !important; border-radius: 15px !important; padding: 12px 25px !important; margin-right: 10px; background: white !important; color: #718096 !important; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .nav-link.active { background: var(--primary) !important; color: white !important; box-shadow: 0 8px 15px rgba(255, 126, 103, 0.3) !important; }
 
-        .nav-link {
-            white-space: nowrap; border: none !important; border-radius: 15px !important;
-            padding: 12px 25px !important; margin-right: 10px; background: white !important;
-            color: #718096 !important; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-        .nav-link.active { 
-            background: var(--primary) !important; color: white !important;
-            box-shadow: 0 8px 15px rgba(255, 126, 103, 0.3) !important;
-        }
-
-        .plan-item {
-            padding: 15px; border-radius: 15px; margin-bottom: 10px; position: relative;
-            cursor: pointer; transition: 0.2s;
-        }
+        .plan-item { padding: 15px; border-radius: 15px; margin-bottom: 10px; position: relative; cursor: pointer; transition: 0.2s; }
         .plan-item.active { background: #fff5f2; border: 1px solid var(--primary); }
+        .btn-delete-plan { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: #fff; color: #ff7e67; border-radius: 50%; width: 28px; height: 28px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; }
 
-        .btn-delete-plan {
-            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-            border: none; background: #fff; color: #ff7e67; border-radius: 50%; width: 28px; height: 28px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;
+        /* 手機端寬度適配修正 */
+        @media (max-width: 768px) {
+            :root { --sidebar-width: 80vw; }
+            .sidebar { max-width: 300px; padding: 1.5rem 1rem; }
+            .hero-section { height: 220px; border-radius: 0 0 30px 30px; }
+            #dynamicTitle { font-size: 1.8rem; }
+            .content-container { padding: 15px; margin-top: -30px; }
+            .glass-card { padding: 15px; border-radius: 20px; }
+            .activity-item { padding: 15px; }
+            .act-time { padding: 8px; font-size: 0.9rem; }
+            .spot-input { font-size: 1.1rem; }
         }
 
-       @media print {
-    /* 1. 隱藏不必要的交互 UI（如刪除、拖拽、搜索圖標） */
-    .no-print, .btn, .btn-link, .fa-trash-can, .fa-xmark, .fa-magnifying-glass, 
-    .fa-bars, .sidebar, .mobile-nav, .btn-delete-plan {
-        display: none !important;
-    }
-
-    /* 2. 背景優化：確保列印時顏色正確 */
-    body { background-color: white !important; padding: 0 !important; }
-    .glass-card { 
-        box-shadow: none !important; 
-        border: 1px solid #eee !important; 
-        break-inside: avoid; /* 防止內容在頁面中間被截斷 */
-        margin-bottom: 20px !important;
-        padding: 20px !important;
-    }
-
-    /* 3. 仿專業手冊的時間軸連線設計 */
-    .act-container { 
-        border-left: 2px solid #ff7e67 !important; 
-        margin-left: 35px !important; 
-        padding-left: 25px !important; 
-    }
-    .activity-wrapper { position: relative; margin-bottom: 30px !important; }
-    .activity-wrapper::before {
-        content: "●";
-        position: absolute;
-        left: -32px; top: 10px;
-        color: #ff7e67;
-        font-size: 20px;
-        background: white;
-    }
-
-    /* 4. 解決你提到的「交通標籤」問題：隱藏刪除 X，只留圖標和時間 */
-    .transport-pill {
-        border: 1px solid #eee !important;
-        background: #fdfdfd !important;
-        border-radius: 6px !important;
-        padding: 4px 12px !important;
-        display: inline-flex !important;
-        align-items: center;
-    }
-    .transport-pill button, .transport-pill .ms-1 { display: none !important; } /* 隱藏 X 號 */
-    .transport-pill input { width: 60px !important; border: none !important; }
-
-    /* 5. 讓 Input 輸入框看起來像普通文字 */
-    input, textarea {
-        border: none !important;
-        background: transparent !important;
-        padding: 0 !important;
-        font-size: 1rem !important;
-        color: #333 !important;
-        width: 100% !important;
-    }
-    .act-time { 
-        color: #ff7e67 !important; 
-        font-weight: bold !important; 
-        font-size: 1.2rem !important;
-    }
-    .spot-input { font-weight: bold !important; font-size: 1.3rem !important; }
-
-    /* 6. 分頁優化 */
-    .tab-pane { display: block !important; opacity: 1 !important; page-break-before: always; }
-    .tab-pane:first-child { page-break-before: auto; }
-}
+        @media print {
+            .no-print, .btn, .btn-link, .fa-trash-can, .fa-xmark, .fa-magnifying-glass, .fa-bars, .sidebar, .mobile-nav, .btn-delete-plan { display: none !important; }
+            body { background-color: white !important; padding: 0 !important; }
+            .glass-card { box-shadow: none !important; border: 1px solid #eee !important; break-inside: avoid; margin-bottom: 20px !important; padding: 20px !important; }
+            .act-container { border-left: 2px solid #ff7e67 !important; margin-left: 35px !important; padding-left: 25px !important; }
+            .activity-wrapper { position: relative; margin-bottom: 30px !important; }
+            .activity-wrapper::before { content: "●"; position: absolute; left: -32px; top: 10px; color: #ff7e67; font-size: 20px; background: white; }
+            .transport-pill { border: 1px solid #eee !important; background: #fdfdfd !important; border-radius: 6px !important; padding: 4px 12px !important; display: inline-flex !important; align-items: center; }
+            .transport-pill button, .transport-pill .ms-1 { display: none !important; }
+            .transport-pill input { width: 60px !important; border: none !important; }
+            input, textarea { border: none !important; background: transparent !important; padding: 0 !important; font-size: 1rem !important; color: #333 !important; width: 100% !important; }
+            .act-time { color: #ff7e67 !important; font-weight: bold !important; font-size: 1.2rem !important; }
+            .spot-input { font-weight: bold !important; font-size: 1.3rem !important; }
+            .tab-pane { display: block !important; opacity: 1 !important; page-break-before: always; }
+            .tab-pane:first-child { page-break-before: auto; }
+        }
     </style>
 </head>
 <body>
@@ -296,18 +159,15 @@
             <div style="font-weight: 900; color: var(--primary); font-size: 1.8rem;">Planner.</div>
             <button class="btn d-lg-none" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        
         <button onclick="createNewPlan()" class="btn btn-primary w-100 mb-3 fw-bold shadow-sm" style="background: var(--primary); border: none; border-radius: 15px; height: 50px;">＋ 新建旅程</button>
-        
         <div class="dropdown mb-3">
             <button class="btn btn-light btn-sm w-100 dropdown-toggle py-2" data-bs-toggle="dropdown" style="border-radius:12px;">複製已有行程</button>
             <ul id="copyPlanDropdown" class="dropdown-menu border-0 shadow-lg w-100" style="border-radius:15px;"></ul>
         </div>
-
         <div id="planList"></div>
     </nav>
 
-    <main class="flex-grow-1">
+    <main class="flex-grow-1" style="min-width: 0;">
         <div id="print-area">
             <div class="hero-section" id="heroBg">
                 <div class="hero-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.25);"></div>
@@ -403,28 +263,18 @@ function toggleSidebar() {
     document.querySelector('.sidebar-overlay').classList.toggle('active');
 }
 
-// 修正後的背景圖加載邏輯：穩定優先
 function updateHeroBg(loc) {
     const hero = document.getElementById('heroBg');
     const keyword = loc ? encodeURIComponent(loc) : 'travel,mountain,landscape';
-    
-    // 優先使用 Unsplash Featured，備用使用 Picsum
     const url1 = `https://images.unsplash.com/featured/?${keyword},scenery&t=${Date.now()}`;
     const url2 = `https://picsum.photos/1600/900?travel&t=${Date.now()}`;
-    
-    // 預載入圖片邏輯
     const img = new Image();
     img.src = url1;
-    img.onload = () => {
-        hero.style.backgroundImage = `url('${url1}')`;
-    };
+    img.onload = () => { hero.style.backgroundImage = `url('${url1}')`; };
     img.onerror = () => {
-        // 如果第一個源失敗，嘗試備用源
         const imgBackup = new Image();
         imgBackup.src = url2;
-        imgBackup.onload = () => {
-            hero.style.backgroundImage = `url('${url2}')`;
-        };
+        imgBackup.onload = () => { hero.style.backgroundImage = `url('${url2}')`; };
     };
 }
 
@@ -472,7 +322,7 @@ function updateAllTitles() {
     const l = document.getElementById('loc').value;
     document.getElementById('dynamicTitle').innerText = l || "探索新視界";
     clearTimeout(bgTimer); 
-    bgTimer = setTimeout(() => updateHeroBg(l), 1500); // 增加延遲，減少頻繁請求
+    bgTimer = setTimeout(() => updateHeroBg(l), 1500);
     if(currentPlanId) { 
         plans[currentPlanId].date = document.getElementById('startDate').value; 
         plans[currentPlanId].location = l; 
@@ -533,7 +383,7 @@ function moveItem(btn, direction) {
         if (prev) wrapper.parentNode.insertBefore(wrapper, prev);
     } else {
         const next = wrapper.nextElementSibling;
-        if (next) wrapper.parentNode.insertBefore(next, wrapper.nextElementSibling.nextElementSibling);
+        if (next) wrapper.parentNode.insertBefore(wrapper, next.nextElementSibling);
     }
     saveCurrentData();
 }
@@ -597,39 +447,24 @@ function openRouteJump(btn, type) {
 function exportPDF() {
     const el = document.getElementById('print-area');
     const panes = document.querySelectorAll('.tab-pane');
-    
-    // --- 導出前處理 ---
-    // 1. 強制展開所有天數的內容
     panes.forEach(p => p.classList.add('show', 'active'));
-    // 2. 標記導出狀態（用於 CSS 觸發美化樣式）
     el.classList.add('is-exporting');
-
     const opt = {
         margin: [10, 10, 10, 10],
         filename: '我的精美行程表.pdf',
         image: { type: 'jpeg', quality: 1 },
-        html2canvas: { 
-            scale: 3, // 提高清晰度
-            useCORS: true,
-            letterRendering: true,
-            scrollY: 0
-        },
+        html2canvas: { scale: 3, useCORS: true, letterRendering: true, scrollY: 0 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-
-    // 執行導出
     html2pdf().set(opt).from(el).save().then(() => {
-        // --- 導出後恢復 ---
         el.classList.remove('is-exporting');
-        panes.forEach((p, i) => { 
-            if(i !== 0) p.classList.remove('show', 'active'); 
-        });
+        panes.forEach((p, i) => { if(i !== 0) p.classList.remove('show', 'active'); });
     });
 }
 window.onload = () => {
     loadPlanList();
     if(Object.keys(plans).length > 0) loadPlan(Object.keys(plans)[0]); else createNewPlan();
-    updateHeroBg(''); // 初始化背景
+    updateHeroBg('');
 };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
