@@ -1,472 +1,634 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium Travel Planner (Stable Image Fix)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧旅遊行程規劃助手</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
-            --primary: #ff7e67;
-            --bg-body: #f4f7f9;
-            --text-main: #2d3748;
-            --sidebar-width: 280px;
+            --primary: #ff6b6b;
+            --primary-hover: #fa5252;
+            --bg-light: #f8f9fa;
+            --text-dark: #2b2d42;
         }
-
-        /* 修復手機端縮放一致性 */
-        html, body {
-            max-width: 100%;
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f2f5;
+            color: var(--text-dark);
             overflow-x: hidden;
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            margin: 0;
         }
-
-        /* 導出樣式保留 */
-        .is-exporting .no-print, .is-exporting .btn, .is-exporting .btn-link, .is-exporting .fa-trash-can,
-        .is-exporting .fa-xmark, .is-exporting .fa-copy, .is-exporting .fa-magnifying-glass,
-        .is-exporting .fa-chevron-up, .is-exporting .fa-chevron-down, .is-exporting .sidebar,
-        .is-exporting .mobile-nav, .is-exporting button { display: none !important; }
-        .is-exporting .transport-pill { border: 1px solid #eee !important; background: #f9f9f9 !important; padding: 2px 8px !important; box-shadow: none !important; }
-        .is-exporting .transport-pill button { display: none !important; }
-        .is-exporting input, .is-exporting textarea { border: none !important; background: transparent !important; padding: 0 !important; box-shadow: none !important; pointer-events: none; }
-        .is-exporting .glass-card { border: 1px solid #f0f0f0 !important; box-shadow: none !important; margin-bottom: 25px !important; break-inside: avoid; }
-        .is-exporting .act-container { border-left: 2px solid #ff7e67 !important; margin-left: 20px !important; padding-left: 20px !important; }
-        .is-exporting .activity-wrapper::before { content: ""; position: absolute; left: -27px; top: 15px; width: 12px; height: 12px; background: #ff7e67; border-radius: 50%; z-index: 10; }
-
-        /* 側邊欄優化 */
         .sidebar {
-            width: var(--sidebar-width);
-            background: white;
-            border-right: 1px solid rgba(0,0,0,0.05);
-            padding: 2rem 1.5rem;
+            width: 280px;
             height: 100vh;
             position: fixed;
-            left: calc(-1 * var(--sidebar-width));
             top: 0;
-            z-index: 1050;
-            transition: left 0.3s ease;
-        }
-        .sidebar.active { left: 0; }
-        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1040; }
-        .sidebar-overlay.active { display: block; }
-
-        @media (min-width: 992px) {
-            .sidebar { position: sticky; left: 0; }
-            .mobile-nav { display: none; }
-        }
-
-        /* 修復：手機導覽列同步縮放 */
-        .mobile-nav {
+            left: 0;
             background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .main-content {
+            margin-left: 280px;
+            padding: 30px;
+            transition: margin 0.3s ease;
+        }
+        .hero-banner {
+            height: 250px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .hero-mask {
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            z-index: 1;
+        }
+        .hero-title {
+            position: relative;
+            z-index: 2;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            margin-bottom: 25px;
+        }
+        .plan-item {
             padding: 12px 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            width: 100%;
-            box-sizing: border-box;
+            background: #f8f9fa;
         }
-
-        .hero-section {
+        .plan-item:hover, .plan-item.active {
+            background: var(--primary);
+            color: white;
+        }
+        .plan-item button {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-weight: bold;
+        }
+        .activity-wrapper {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
             position: relative;
-            height: 300px;
-            border-radius: 0 0 40px 40px;
-            overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover;
-            transition: background-image 1.2s ease-in-out;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 100%;
         }
-
-        #dynamicTitle {
-            color: white; font-weight: 800; font-size: 2.8rem; z-index: 1;
-            text-shadow: 0 4px 15px rgba(0,0,0,0.4); text-align: center; padding: 0 15px;
+        .transport-pill {
+            display: inline-flex;
+            align-items: center;
+            background: #edf2f7;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-right: 8px;
+            margin-top: 8px;
+            font-size: 0.9rem;
         }
-
-        .content-container { padding: 20px; margin-top: -50px; width: 100%; box-sizing: border-box; }
-        .glass-card { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.06); padding: 25px; margin-bottom: 25px; }
-
-        .activity-item { background: #fff; border-radius: 20px; padding: 20px; border: 1px solid #f1f5f9; margin-bottom: 15px; transition: all 0.2s ease; }
-        .act-time { font-weight: 800; color: var(--primary); background: #fff5f2; border: none; border-radius: 10px; width: 100%; text-align: center; padding: 10px; }
-        .spot-input { font-size: 1.2rem; font-weight: 600; border: none; border-bottom: 2px solid #edf2f7; width: 100%; padding: 8px 0; background: transparent; }
-        .spot-input:focus { outline: none; border-bottom-color: var(--primary); }
-
-        .transport-pill { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50px; padding: 6px 15px; display: inline-flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-top: 10px; }
-
-        .nav-tabs { flex-wrap: nowrap; overflow-x: auto; border: none; padding-bottom: 15px; scrollbar-width: none; }
-        .nav-tabs::-webkit-scrollbar { display: none; }
-        .nav-link { white-space: nowrap; border: none !important; border-radius: 15px !important; padding: 12px 25px !important; margin-right: 10px; background: white !important; color: #718096 !important; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .nav-link.active { background: var(--primary) !important; color: white !important; box-shadow: 0 8px 15px rgba(255, 126, 103, 0.3) !important; }
-
-        .plan-item { padding: 15px; border-radius: 15px; margin-bottom: 10px; position: relative; cursor: pointer; transition: 0.2s; }
-        .plan-item.active { background: #fff5f2; border: 1px solid var(--primary); }
-        .btn-delete-plan { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: #fff; color: #ff7e67; border-radius: 50%; width: 28px; height: 28px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; }
-
-        /* 手機端寬度適配修正 */
-        @media (max-width: 768px) {
-            :root { --sidebar-width: 80vw; }
-            .sidebar { max-width: 300px; padding: 1.5rem 1rem; }
-            .hero-section { height: 220px; border-radius: 0 0 30px 30px; }
-            #dynamicTitle { font-size: 1.8rem; }
-            .content-container { padding: 15px; margin-top: -30px; }
-            .glass-card { padding: 15px; border-radius: 20px; }
-            .activity-item { padding: 15px; }
-            .act-time { padding: 8px; font-size: 0.9rem; }
-            .spot-input { font-size: 1.1rem; }
+        .transport-pill select, .transport-pill input {
+            border: none;
+            background: transparent;
+            outline: none;
         }
-
+        .nav-tabs .nav-link {
+            border: none;
+            color: #4a5568;
+            font-weight: 500;
+            border-radius: 10px;
+            margin-right: 5px;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: var(--primary);
+            color: white !important;
+        }
+        .toggle-btn {
+            display: none;
+            position: fixed;
+            top: 15px; left: 15px;
+            z-index: 1100;
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+        @media (max-width: 991.98px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 15px; }
+            .toggle-btn { display: block; }
+            .sidebar-overlay.active { display: block; }
+        }
         @media print {
-            .no-print, .btn, .btn-link, .fa-trash-can, .fa-xmark, .fa-magnifying-glass, .fa-bars, .sidebar, .mobile-nav, .btn-delete-plan { display: none !important; }
-            body { background-color: white !important; padding: 0 !important; }
-            .glass-card { box-shadow: none !important; border: 1px solid #eee !important; break-inside: avoid; margin-bottom: 20px !important; padding: 20px !important; }
-            .act-container { border-left: 2px solid #ff7e67 !important; margin-left: 35px !important; padding-left: 25px !important; }
-            .activity-wrapper { position: relative; margin-bottom: 30px !important; }
-            .activity-wrapper::before { content: "●"; position: absolute; left: -32px; top: 10px; color: #ff7e67; font-size: 20px; background: white; }
-            .transport-pill { border: 1px solid #eee !important; background: #fdfdfd !important; border-radius: 6px !important; padding: 4px 12px !important; display: inline-flex !important; align-items: center; }
-            .transport-pill button, .transport-pill .ms-1 { display: none !important; }
-            .transport-pill input { width: 60px !important; border: none !important; }
-            input, textarea { border: none !important; background: transparent !important; padding: 0 !important; font-size: 1rem !important; color: #333 !important; width: 100% !important; }
-            .act-time { color: #ff7e67 !important; font-weight: bold !important; font-size: 1.2rem !important; }
-            .spot-input { font-weight: bold !important; font-size: 1.3rem !important; }
-            .tab-pane { display: block !important; opacity: 1 !important; page-break-before: always; }
-            .tab-pane:first-child { page-break-before: auto; }
+            .no-print { display: none !important; }
+            .main-content { margin-left: 0 !important; padding: 0 !important; }
+            body { background: white; }
         }
     </style>
 </head>
 <body>
 
-<div class="mobile-nav no-print">
-    <div style="font-weight: 900; color: var(--primary); font-size: 1.4rem;">Planner.</div>
-    <button class="btn btn-light" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-</div>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <button class="btn btn-dark toggle-btn no-print" onclick="toggleSidebar()">☰ 選單</button>
 
-<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar no-print" id="sidebar">
+        <h4 class="fw-bold mb-4" style="color:var(--primary)">Planner.</h4>
+        <button class="btn btn-danger w-100 mb-3 fw-bold py-2 shadow-sm" style="background:var(--primary); border:none;" onclick="createNewPlan()">+ 新建旅程</button>
+        
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-outline-secondary btn-sm w-50" onclick="exportJSONData()">📥 備份行程</button>
+            <label class="btn btn-outline-secondary btn-sm w-50 m-0 text-center">
+                📤 還原行程 <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSONData(this)">
+            </label>
+        </div>
 
-<div class="container-fluid p-0 d-flex">
-    <nav class="sidebar no-print" id="sidebar">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div style="font-weight: 900; color: var(--primary); font-size: 1.8rem;">Planner.</div>
-            <button class="btn d-lg-none" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="dropdown mb-4">
+            <button class="btn btn-light btn-sm w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown">複製已有行程</button>
+            <ul class="dropdown-menu w-100" id="copyPlanDropdown"></ul>
         </div>
-        <button onclick="createNewPlan()" class="btn btn-primary w-100 mb-3 fw-bold shadow-sm" style="background: var(--primary); border: none; border-radius: 15px; height: 50px;">＋ 新建旅程</button>
-        <div class="dropdown mb-3">
-            <button class="btn btn-light btn-sm w-100 dropdown-toggle py-2" data-bs-toggle="dropdown" style="border-radius:12px;">複製已有行程</button>
-            <ul id="copyPlanDropdown" class="dropdown-menu border-0 shadow-lg w-100" style="border-radius:15px;"></ul>
-        </div>
+
+        <hr>
+        <h6 class="text-muted fw-bold mb-3">我的旅程清單</h6>
         <div id="planList"></div>
-    </nav>
-
-    <main class="flex-grow-1" style="min-width: 0;">
-        <div id="print-area">
-            <div class="hero-section" id="heroBg">
-                <div class="hero-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.25);"></div>
-                <h1 id="dynamicTitle">探索新視界</h1>
-            </div>
-
-            <div class="content-container">
-                <div class="glass-card no-print">
-                    <div class="row g-3">
-                        <div class="col-6 col-md-3">
-                            <label class="small fw-bold text-muted mb-1">出發日期</label>
-                            <input type="date" id="startDate" class="form-control border-0 bg-light" oninput="updateAllTitles(); saveCurrentData();" style="border-radius:12px; height: 45px;">
-                        </div>
-                        <div class="col-6 col-md-2">
-                            <label class="small fw-bold text-muted mb-1">天數</label>
-                            <input type="number" id="days" class="form-control border-0 bg-light" value="1" min="1" oninput="updateAllTitles();" style="border-radius:12px; height: 45px;">
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="small fw-bold text-muted mb-1">目的地</label>
-                            <div class="input-group">
-                                <input type="text" id="loc" class="form-control border-0 bg-light" placeholder="輸入城市" oninput="updateAllTitles(); saveCurrentData();" style="border-radius:12px; height: 45px;">
-                                <button class="btn btn-white border ms-2" onclick="searchGoogleVal(document.getElementById('loc').value)" style="border-radius:12px;"><i class="fa-solid fa-magnifying-glass"></i></button>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-3 d-grid">
-                            <button class="btn btn-dark fw-bold shadow" onclick="initPlanner()" style="border-radius:12px; height: 45px; background: #1a202c;">生成行程表</button>
-                        </div>
-                    </div>
-                </div>
-
-                <ul class="nav nav-tabs no-print" id="dayTabs"></ul>
-                <div class="tab-content" id="dayContent"></div>
-
-                <div class="text-center mt-4 no-print pb-5 px-3">
-                    <button class="btn btn-dark px-5 py-3 fw-bold w-100 shadow-lg" style="border-radius:18px; max-width: 450px; background: #1a202c;" onclick="exportPDF()">
-                        <i class="fa-solid fa-file-pdf me-2"></i> 導出行程 PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
-<template id="tpl-activity">
-    <div class="activity-wrapper mb-3">
-        <div class="activity-item shadow-sm">
-            <div class="row g-2 align-items-center">
-                <div class="col-12 col-md-auto no-print d-flex justify-content-between mb-2 mb-md-0">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-light shadow-sm" onclick="moveItem(this, -1)" style="border-radius: 8px;"><i class="fa-solid fa-arrow-up"></i></button>
-                        <button class="btn btn-sm btn-light shadow-sm" onclick="moveItem(this, 1)" style="border-radius: 8px;"><i class="fa-solid fa-arrow-down"></i></button>
-                    </div>
-                    <div class="d-flex gap-3 d-md-none">
-                        <button class="btn btn-link text-muted p-0" onclick="copyToDay(this)"><i class="fa-solid fa-copy"></i></button>
-                        <button class="btn btn-link text-danger p-0" onclick="removeWrapper(this)"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </div>
-                <div class="col-4 col-md-2"><input type="time" class="form-control act-time" oninput="saveCurrentData()"></div>
-                <div class="col-8 col-md-6">
-                    <div class="input-group">
-                        <input type="text" class="spot-input" placeholder="想去哪裡？" oninput="saveCurrentData()">
-                        <button class="btn btn-link p-0 ms-2 text-muted no-print" onclick="searchGoogleSpot(this)"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </div>
-                </div>
-                <div class="col-auto ms-auto no-print d-none d-md-block">
-                    <button class="btn btn-link text-muted p-0 me-3" onclick="copyToDay(this)"><i class="fa-solid fa-copy"></i></button>
-                    <button class="btn btn-link text-danger p-0" onclick="removeWrapper(this)"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-                <div class="col-12 mt-1">
-                    <input type="text" class="form-control border-0 bg-transparent text-muted p-0 small" placeholder="💡 門票、預約號碼或備註..." oninput="saveCurrentData()">
-                </div>
-            </div>
-        </div>
-        <div class="transport-section ms-2 ms-md-5">
-            <div class="transport-list d-flex flex-wrap align-items-center gap-2"></div>
-            <div class="mt-2 no-print d-flex align-items-center gap-3">
-                <button class="btn btn-link btn-sm text-muted p-0 fw-bold text-decoration-none" onclick="addTransport(this)">+ 增加交通</button>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-link btn-sm text-primary p-0 text-decoration-none" onclick="openRouteJump(this, 'google')"><small>Google Map</small></button>
-                    <button class="btn btn-link btn-sm text-success p-0 text-decoration-none" onclick="openRouteJump(this, 'amap')"><small>高德地圖</small></button>
-                </div>
-            </div>
-        </div>
     </div>
-</template>
 
-<script>
-let currentPlanId = null;
-let plans = JSON.parse(localStorage.getItem('travel_v17_final')) || {};
+    <div class="main-content" id="print-area">
+        <div class="hero-banner" id="heroBg">
+            <div class="hero-mask"></div>
+            <div class="hero-title" id="dynamicTitle">探索新視界</div>
+        </div>
 
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('active');
-    document.querySelector('.sidebar-overlay').classList.toggle('active');
-}
-
-function updateHeroBg(loc) {
-    const hero = document.getElementById('heroBg');
-    const keyword = loc ? encodeURIComponent(loc) : 'travel,mountain,landscape';
-    const url1 = `https://images.unsplash.com/featured/?${keyword},scenery&t=${Date.now()}`;
-    const url2 = `https://picsum.photos/1600/900?travel&t=${Date.now()}`;
-    const img = new Image();
-    img.src = url1;
-    img.onload = () => { hero.style.backgroundImage = `url('${url1}')`; };
-    img.onerror = () => {
-        const imgBackup = new Image();
-        imgBackup.src = url2;
-        imgBackup.onload = () => { hero.style.backgroundImage = `url('${url2}')`; };
-    };
-}
-
-function saveToStorage() { localStorage.setItem('travel_v17_final', JSON.stringify(plans)); }
-
-function loadPlanList() {
-    const list = document.getElementById('planList'), dropdown = document.getElementById('copyPlanDropdown');
-    list.innerHTML = ''; dropdown.innerHTML = '';
-    Object.keys(plans).forEach(id => {
-        const p = plans[id];
-        const item = document.createElement('div');
-        item.className = `plan-item ${id === currentPlanId ? 'active' : ''}`;
-        item.innerHTML = `<div onclick="loadPlan('${id}'); if(window.innerWidth < 992) toggleSidebar();"><strong>${p.location || '未命名旅程'}</strong><br><small>${p.date || '點擊設定'}</small></div><button class="btn-delete-plan no-print" onclick="deletePlan('${id}', event)">✕</button>`;
-        list.appendChild(item);
-        dropdown.innerHTML += `<li><a class="dropdown-item" href="#" onclick="duplicatePlan('${id}')">${p.location || '行程'}</a></li>`;
-    });
-}
-
-function loadPlan(id) {
-    currentPlanId = id; const p = plans[id];
-    document.getElementById('startDate').value = p.date || '';
-    document.getElementById('loc').value = p.location || '';
-    document.getElementById('days').value = p.days || 1;
-    renderPlanner(p.daysData || []);
-    updateAllTitles(); loadPlanList();
-}
-
-function createNewPlan() {
-    const id = 'p' + Date.now();
-    plans[id] = { id, date: '', location: '', days: 1, daysData: [] };
-    saveToStorage(); loadPlan(id);
-}
-
-function duplicatePlan(sid) {
-    const nid = 'p' + Date.now();
-    plans[nid] = JSON.parse(JSON.stringify(plans[sid]));
-    plans[nid].id = nid; plans[nid].location += " (副本)";
-    saveToStorage(); loadPlan(nid);
-}
-
-function deletePlan(id, e) { e.stopPropagation(); if(confirm("確定刪除此行程嗎？")) { delete plans[id]; saveToStorage(); location.reload(); } }
-
-let bgTimer;
-function updateAllTitles() {
-    const l = document.getElementById('loc').value;
-    document.getElementById('dynamicTitle').innerText = l || "探索新視界";
-    clearTimeout(bgTimer); 
-    bgTimer = setTimeout(() => updateHeroBg(l), 1500);
-    if(currentPlanId) { 
-        plans[currentPlanId].date = document.getElementById('startDate').value; 
-        plans[currentPlanId].location = l; 
-        loadPlanList(); 
-    }
-}
-
-function initPlanner() {
-    if(!currentPlanId) return;
-    const num = parseInt(document.getElementById('days').value);
-    plans[currentPlanId].daysData = Array.from({length: num}, () => ({ activities: [], note: '' }));
-    plans[currentPlanId].days = num;
-    renderPlanner(plans[currentPlanId].daysData); saveCurrentData();
-}
-
-function renderPlanner(daysData) {
-    const tabH = document.getElementById('dayTabs'), contH = document.getElementById('dayContent');
-    tabH.innerHTML = ''; contH.innerHTML = '';
-    const dStart = document.getElementById('startDate').value ? new Date(document.getElementById('startDate').value) : new Date();
-
-    daysData.forEach((day, i) => {
-        const id = `d${i}`, curDate = new Date(dStart); curDate.setDate(dStart.getDate() + i);
-        const dateStr = curDate.toLocaleDateString('zh-TW', {month:'short', day:'numeric'});
-        tabH.innerHTML += `<li class="nav-item"><button class="nav-link ${i===0?'active':''}" data-bs-toggle="tab" data-bs-target="#${id}">D${i+1} (${dateStr})</button></li>`;
-        contH.innerHTML += `
-            <div class="tab-pane fade ${i===0?'show active':''}" id="${id}">
-                <div class="glass-card">
-                    <h5 class="fw-bold mb-4" style="color:var(--primary)">Day ${i+1} • ${dateStr}</h5>
-                    <div class="act-container"></div>
-                    <button class="btn btn-light w-100 mt-2 py-3 fw-bold" style="border:2px dashed #cbd5e0; border-radius:15px; color: #718096;" onclick="addAct('${id}')">+ 加入行程或餐廳</button>
-                    <textarea class="form-control mt-4 border-0 bg-light" rows="3" style="border-radius:15px" placeholder="在這裡寫下筆記..." oninput="saveCurrentData()">${day.note || ''}</textarea>
+        <div class="glass-card no-print">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted small">出發日期</label>
+                    <input type="date" id="startDate" class="form-control border-0 bg-light py-2" style="border-radius:10px;" onchange="updateAllTitles()">
                 </div>
-            </div>`;
-        const container = document.querySelector(`#${id} .act-container`);
-        if(day.activities?.length) day.activities.forEach(act => addActUI(container, act));
-        else addActUI(container);
-    });
-}
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-muted small">天數</label>
+                    <input type="number" id="days" class="form-control border-0 bg-light py-2" min="1" value="1" style="border-radius:10px;" onchange="initPlanner()">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted small">目的地</label>
+                    <div class="input-group">
+                        <input type="text" id="loc" class="form-control border-0 bg-light py-2" placeholder="例如：東京、巴黎..." style="border-radius:10px 0 0 10px;" oninput="updateAllTitles()">
+                        <button class="btn btn-light bg-light border-0" type="button" onclick="searchGoogleVal(document.getElementById('loc').value)">🔍</button>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-dark w-100 py-2 fw-bold" style="border-radius:10px;" onclick="initPlanner()">生成行程表</button>
+                </div>
+            </div>
+        </div>
 
-function addActUI(container, data = null) {
-    const clone = document.getElementById('tpl-activity').content.cloneNode(true);
-    const wrapper = clone.querySelector('.activity-wrapper');
-    if (data) {
-        wrapper.querySelector('.act-time').value = data.time || '';
-        wrapper.querySelector('.spot-input').value = data.spot || '';
-        wrapper.querySelectorAll('input')[2].value = data.detail || '';
-        if (data.transports) data.transports.forEach(t => addTransportUI(wrapper.querySelector('.transport-list'), t));
+        <ul class="nav nav-tabs border-0 mb-4 no-print" id="dayTabs" role="tablist"></ul>
+
+        <div class="tab-content" id="dayContent"></div>
+
+        <button class="btn btn-primary mt-4 no-print shadow" style="border-radius:12px; padding:12px 25px;" onclick="exportPDF()">🖨️ 匯出 PDF 行程表</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    let currentPlanId = null;
+    let plans = JSON.parse(localStorage.getItem('travel_v17_final')) || {};
+    let isLoading = false; 
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.querySelector('.sidebar-overlay').classList.toggle('active');
     }
-    container.appendChild(clone);
-}
 
-function addAct(dayId) { addActUI(document.querySelector(`#${dayId} .act-container`)); saveCurrentData(); }
-
-function moveItem(btn, direction) {
-    const wrapper = btn.closest('.activity-wrapper');
-    if (direction === -1) {
-        const prev = wrapper.previousElementSibling;
-        if (prev) wrapper.parentNode.insertBefore(wrapper, prev);
-    } else {
-        const next = wrapper.nextElementSibling;
-        if (next) wrapper.parentNode.insertBefore(wrapper, next.nextElementSibling);
+    function updateHeroBg(loc) {
+        const hero = document.getElementById('heroBg');
+        const keyword = loc ? encodeURIComponent(loc) : 'travel,mountain,landscape';
+        const url1 = `https://images.unsplash.com/featured/?${keyword},scenery&t=${Date.now()}`;
+        const url2 = `https://picsum.photos/1600/900?travel&t=${Date.now()}`;
+        const img = new Image();
+        img.src = url1;
+        img.onload = () => { hero.style.backgroundImage = `url('${url1}')`; };
+        img.onerror = () => {
+            const imgBackup = new Image();
+            imgBackup.src = url2;
+            imgBackup.onload = () => { hero.style.backgroundImage = `url('${url2}')`; };
+        };
     }
-    saveCurrentData();
-}
 
-function addTransportUI(list, data = null) {
-    const div = document.createElement('div');
-    div.className = 'transport-pill shadow-sm';
-    div.innerHTML = `
-        <select class="border-0 bg-transparent fw-bold" style="outline:none;">
-            <option ${data?.type=='🚶'?'selected':''}>🚶</option><option ${data?.type=='🚇'?'selected':''}>🚇</option>
-            <option ${data?.type=='🚌'?'selected':''}>🚌</option><option ${data?.type=='🚕'?'selected':''}>🚕</option>
-        </select>
-        <input type="time" class="trans-time-picker" value="${data?.duration || '00:30'}" oninput="saveCurrentData()">
-        <button class="btn btn-sm p-0 text-muted ms-1" onclick="this.parentElement.remove();saveCurrentData();">✕</button>
-    `;
-    list.appendChild(div);
-}
+    function saveToStorage() { 
+        localStorage.setItem('travel_v17_final', JSON.stringify(plans)); 
+    }
 
-function addTransport(btn) { addTransportUI(btn.closest('.transport-section').querySelector('.transport-list')); saveCurrentData(); }
-
-function saveCurrentData() {
-    if(!currentPlanId) return;
-    const daysData = [];
-    document.querySelectorAll('.tab-pane').forEach(pane => {
-        const activities = [];
-        pane.querySelectorAll('.activity-wrapper').forEach(wrapper => {
-            const transports = [];
-            wrapper.querySelectorAll('.transport-pill').forEach(pill => {
-                transports.push({ type: pill.querySelector('select').value, duration: pill.querySelector('.trans-time-picker').value });
-            });
-            activities.push({ time: wrapper.querySelector('.act-time').value, spot: wrapper.querySelector('.spot-input').value, detail: wrapper.querySelectorAll('input')[2].value, transports });
+    function loadPlanList() {
+        const list = document.getElementById('planList'), dropdown = document.getElementById('copyPlanDropdown');
+        list.innerHTML = ''; dropdown.innerHTML = '';
+        Object.keys(plans).forEach(id => {
+            const p = plans[id];
+            const item = document.createElement('div');
+            item.className = `plan-item ${id === currentPlanId ? 'active' : ''}`;
+            item.innerHTML = `<div onclick="loadPlan('${id}'); if(window.innerWidth < 992) toggleSidebar();"><strong>${p.location || '未命名旅程'}</strong><br><small>${p.date || '點擊設定'}</small></div><button class="btn-delete-plan no-print" onclick="deletePlan('${id}', event)">✕</button>`;
+            list.appendChild(item);
+            dropdown.innerHTML += `<li><a class="dropdown-item" href="#" onclick="duplicatePlan('${id}')">${p.location || '行程'}</a></li>`;
         });
-        daysData.push({ note: pane.querySelector('textarea').value, activities });
-    });
-    plans[currentPlanId].daysData = daysData; plans[currentPlanId].days = daysData.length;
-    saveToStorage();
-}
+    }
 
-function removeWrapper(btn) { if(confirm("刪除此行程點？")) { btn.closest('.activity-wrapper').remove(); saveCurrentData(); } }
-function searchGoogleVal(val) { if (val) window.open(`https://www.google.com/search?q=${encodeURIComponent(val)}`, '_blank'); }
-function searchGoogleSpot(btn) { searchGoogleVal(btn.closest('.input-group').querySelector('.spot-input').value); }
+    function loadPlan(id) {
+        if (!plans[id]) return;
+        currentPlanId = id; 
+        const p = plans[id];
+        
+        isLoading = true; // 鎖定：防加載時誤觸自動保存覆蓋
+        document.getElementById('startDate').value = p.date || '';
+        document.getElementById('loc').value = p.location || '';
+        document.getElementById('days').value = p.days || 1;
+        
+        renderPlanner(p.daysData || []);
+        
+        isLoading = false; 
+        updateAllTitles(); 
+        loadPlanList();
+    }
 
-function copyToDay(btn) {
-    const target = prompt("複製到第幾天？", "1");
-    if (!target) return;
-    const container = document.querySelector(`.tab-pane[id="d${parseInt(target)-1}"] .act-container`);
-    if (container) {
-        const w = btn.closest('.activity-wrapper');
-        addActUI(container, { time: w.querySelector('.act-time').value, spot: w.querySelector('.spot-input').value, detail: w.querySelectorAll('input')[2].value });
+    function createNewPlan() {
+        const id = 'p' + Date.now();
+        plans[id] = { id, date: '', location: '', days: 1, daysData: [{ activities: [], note: '' }] };
+        saveToStorage(); 
+        loadPlan(id);
+    }
+
+    function duplicatePlan(sid) {
+        const nid = 'p' + Date.now();
+        plans[nid] = JSON.parse(JSON.stringify(plans[sid]));
+        plans[nid].id = nid; 
+        plans[nid].location += " (副本)";
+        saveToStorage(); 
+        loadPlan(nid);
+    }
+
+    function deletePlan(id, e) { 
+        e.stopPropagation(); 
+        if(confirm("確定刪除此行程嗎？")) { 
+            delete plans[id]; 
+            saveToStorage(); 
+            location.reload(); 
+        } 
+    }
+
+    let bgTimer;
+    function updateAllTitles() {
+        const l = document.getElementById('loc').value;
+        document.getElementById('dynamicTitle').innerText = l || "探索新視界";
+        clearTimeout(bgTimer); 
+        bgTimer = setTimeout(() => updateHeroBg(l), 1500);
+        if(currentPlanId && !isLoading) { 
+            plans[currentPlanId].date = document.getElementById('startDate').value; 
+            plans[currentPlanId].location = l; 
+            saveToStorage();
+            loadPlanList(); 
+        }
+    }
+
+    function initPlanner() {
+        if(!currentPlanId) return;
+        const num = parseInt(document.getElementById('days').value) || 1;
+        plans[currentPlanId].daysData = Array.from({length: num}, () => ({ activities: [], note: '' }));
+        plans[currentPlanId].days = num;
+        renderPlanner(plans[currentPlanId].daysData); 
         saveCurrentData();
     }
-}
 
-function openRouteJump(btn, type) {
-    const w = btn.closest('.activity-wrapper'), all = Array.from(w.parentElement.querySelectorAll('.activity-wrapper')), idx = all.indexOf(w);
-    const f = w.querySelector('.spot-input').value, t = (idx < all.length-1) ? all[idx+1].querySelector('.spot-input').value : "";
-    const cf = prompt("從哪出發？", f || "我的位置"), ct = prompt("目的地：", t || "下個點");
-    if(ct) window.open(type==='google' ? `https://www.google.com/maps/dir/${encodeURIComponent(cf)}/${encodeURIComponent(ct)}` : `https://www.amap.com/dir?from[name]=${encodeURIComponent(cf)}&to[name]=${encodeURIComponent(ct)}`, '_blank');
-}
+    // 核心改造：100% 依據數據直接渲染，絕不產生異步時序差
+    function renderPlanner(daysData) {
+        const tabH = document.getElementById('dayTabs'), contH = document.getElementById('dayContent');
+        tabH.innerHTML = ''; contH.innerHTML = '';
+        const dStart = document.getElementById('startDate').value ? new Date(document.getElementById('startDate').value) : new Date();
 
-function exportPDF() {
-    const el = document.getElementById('print-area');
-    const panes = document.querySelectorAll('.tab-pane');
-    panes.forEach(p => p.classList.add('show', 'active'));
-    el.classList.add('is-exporting');
-    const opt = {
-        margin: [10, 10, 10, 10],
-        filename: '我的精美行程表.pdf',
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true, letterRendering: true, scrollY: 0 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        daysData.forEach((day, i) => {
+            const id = `d${i}`, curDate = new Date(dStart); 
+            curDate.setDate(dStart.getDate() + i);
+            const dateStr = curDate.toLocaleDateString('zh-TW', {month:'short', day:'numeric'});
+            
+            tabH.innerHTML += `<li class="nav-item"><button class="nav-link ${i===0?'active':''}" data-bs-toggle="tab" data-bs-target="#${id}">D${i+1} (${dateStr})</button></li>`;
+            
+            let actHtml = '';
+            if (day.activities && day.activities.length > 0) {
+                day.activities.forEach(act => {
+                    let transHtml = '';
+                    if (act.transports) {
+                        act.transports.forEach(t => {
+                            transHtml += `
+                                <div class="transport-pill shadow-sm">
+                                    <select class="border-0 bg-transparent fw-bold trans-select" style="outline:none;" onchange="saveCurrentData()">
+                                        <option ${t.type=='🚶'?'selected':''}>🚶</option>
+                                        <option ${t.type=='🚇'?'selected':''}>🚇</option>
+                                        <option ${t.type=='🚌'?'selected':''}>🚌</option>
+                                        <option ${t.type=='🚕'?'selected':''}>🚕</option>
+                                    </select>
+                                    <input type="time" class="trans-time-picker" value="${t.duration || '00:30'}" onchange="saveCurrentData()">
+                                    <button class="btn btn-sm p-0 text-muted ms-1" onclick="this.parentElement.remove(); saveCurrentData();">✕</button>
+                                </div>`;
+                        });
+                    }
+
+                    actHtml += `
+                        <div class="activity-wrapper">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <button class="btn btn-light btn-sm no-print p-1" onclick="moveItem(this, -1)">↑</button>
+                                <button class="btn btn-light btn-sm no-print p-1" onclick="moveItem(this, 1)">↓</button>
+                                <input type="time" class="form-control border-0 bg-light py-1 px-2 act-time" style="width:110px; border-radius:8px; color:var(--primary); font-weight:bold;" value="${act.time || ''}" onchange="saveCurrentData()">
+                                <div class="input-group flex-grow-1">
+                                    <input type="text" class="form-control border-0 bg-light py-1 spot-input" placeholder="想去哪裡？" style="border-radius:8px 0 0 8px; font-weight:500;" value="${act.spot || ''}" oninput="saveCurrentData()">
+                                    <button class="btn btn-light bg-light border-0 no-print" type="button" onclick="searchGoogleSpot(this)">🔍</button>
+                                </div>
+                                <button class="btn btn-light btn-sm no-print ms-2 text-muted" title="複製此點到其他天" onclick="copyToDay(this)">📋</button>
+                                <button class="btn btn-light btn-sm no-print text-danger ms-1" onclick="removeWrapper(this)">🗑️</button>
+                            </div>
+                            <div class="mb-2">
+                                <input type="text" class="form-control border-0 bg-light btn-sm field-detail" placeholder="💡 門票、預約號碼或備註..." style="border-radius:8px; font-size:0.9rem;" value="${act.detail || ''}" oninput="saveCurrentData()">
+                            </div>
+                            <div class="transport-section no-print">
+                                <div class="transport-list d-inline-block">${transHtml}</div>
+                                <button class="btn btn-link btn-sm text-decoration-none text-muted p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="addTransport(this)">+ 增加交通</button>
+                                <button class="btn btn-link btn-sm text-decoration-none text-primary p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="openRouteJump(this, 'google')">Google Map</button>
+                                <button class="btn btn-link btn-sm text-decoration-none text-success p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="openRouteJump(this, 'amap')">高德地圖</button>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                // 如果是空行程，至少留一格空白點方便填寫
+                actHtml = `
+                    <div class="activity-wrapper">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <button class="btn btn-light btn-sm no-print p-1" onclick="moveItem(this, -1)">↑</button>
+                            <button class="btn btn-light btn-sm no-print p-1" onclick="moveItem(this, 1)">↓</button>
+                            <input type="time" class="form-control border-0 bg-light py-1 px-2 act-time" style="width:110px; border-radius:8px; color:var(--primary); font-weight:bold;" onchange="saveCurrentData()">
+                            <div class="input-group flex-grow-1">
+                                <input type="text" class="form-control border-0 bg-light py-1 spot-input" placeholder="想去哪裡？" style="border-radius:8px 0 0 8px; font-weight:500;" oninput="saveCurrentData()">
+                                <button class="btn btn-light bg-light border-0 no-print" type="button" onclick="searchGoogleSpot(this)">🔍</button>
+                            </div>
+                            <button class="btn btn-light btn-sm no-print ms-2 text-muted" title="複製此點到其他天" onclick="copyToDay(this)">📋</button>
+                            <button class="btn btn-light btn-sm no-print text-danger ms-1" onclick="removeWrapper(this)">🗑️</button>
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" class="form-control border-0 bg-light btn-sm field-detail" placeholder="💡 門票、預約號碼或備註..." style="border-radius:8px; font-size:0.9rem;" oninput="saveCurrentData()">
+                        </div>
+                        <div class="transport-section no-print">
+                            <div class="transport-list d-inline-block"></div>
+                            <button class="btn btn-link btn-sm text-decoration-none text-muted p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="addTransport(this)">+ 增加交通</button>
+                            <button class="btn btn-link btn-sm text-decoration-none text-primary p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="openRouteJump(this, 'google')">Google Map</button>
+                            <button class="btn btn-link btn-sm text-decoration-none text-success p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="openRouteJump(this, 'amap')">高德地圖</button>
+                        </div>
+                    </div>`;
+            }
+
+            contH.innerHTML += `
+                <div class="tab-pane fade ${i===0?'show active':''}" id="${id}">
+                    <div class="glass-card">
+                        <h5 class="fw-bold mb-4" style="color:var(--primary)">Day ${i+1} • ${dateStr}</h5>
+                        <div class="act-container">${actHtml}</div>
+                        <button class="btn btn-light w-100 mt-2 py-3 fw-bold no-print" style="border:2px dashed #cbd5e0; border-radius:15px; color: #718096;" onclick="addAct('${id}')">+ 加入行程或餐廳</button>
+                        <textarea class="form-control mt-4 border-0 bg-light day-note-area" rows="3" style="border-radius:15px" placeholder="在這裡寫下筆記..." oninput="saveCurrentData()">${day.note || ''}</textarea>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function addAct(dayId) { 
+        const container = document.querySelector(`#${dayId} .act-container`);
+        const div = document.createElement('div');
+        div.className = 'activity-wrapper';
+        div.innerHTML = `
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <button class="btn btn-light btn-sm no-print p-1" onclick="moveItem(this, -1)">↑</button>
+                <button class="btn btn-light btn-sm no-print p-1" onclick="moveItem(this, 1)">↓</button>
+                <input type="time" class="form-control border-0 bg-light py-1 px-2 act-time" style="width:110px; border-radius:8px; color:var(--primary); font-weight:bold;" onchange="saveCurrentData()">
+                <div class="input-group flex-grow-1">
+                    <input type="text" class="form-control border-0 bg-light py-1 spot-input" placeholder="想去哪裡？" style="border-radius:8px 0 0 8px; font-weight:500;" oninput="saveCurrentData()">
+                    <button class="btn btn-light bg-light border-0 no-print" type="button" onclick="searchGoogleSpot(this)">🔍</button>
+                </div>
+                <button class="btn btn-light btn-sm no-print ms-2 text-muted" title="複製此點到其他天" onclick="copyToDay(this)">📋</button>
+                <button class="btn btn-light btn-sm no-print text-danger ms-1" onclick="removeWrapper(this)">🗑️</button>
+            </div>
+            <div class="mb-2">
+                <input type="text" class="form-control border-0 bg-light btn-sm field-detail" placeholder="💡 門票、預約號碼或備註..." style="border-radius:8px; font-size:0.9rem;" oninput="saveCurrentData()">
+            </div>
+            <div class="transport-section no-print">
+                <div class="transport-list d-inline-block"></div>
+                <button class="btn btn-link btn-sm text-decoration-none text-muted p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="addTransport(this)">+ 增加交通</button>
+                <button class="btn btn-link btn-sm text-decoration-none text-primary p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="openRouteJump(this, 'google')">Google Map</button>
+                <button class="btn btn-link btn-sm text-decoration-none text-success p-0 m-0 ms-2" style="font-size:0.85rem;" onclick="openRouteJump(this, 'amap')">高德地圖</button>
+            </div>`;
+        container.appendChild(div);
+        saveCurrentData(); 
+    }
+
+    function moveItem(btn, direction) {
+        const wrapper = btn.closest('.activity-wrapper');
+        if (direction === -1) {
+            const prev = wrapper.previousElementSibling;
+            if (prev) wrapper.parentNode.insertBefore(wrapper, prev);
+        } else {
+            const next = wrapper.nextElementSibling;
+            if (next) wrapper.parentNode.insertBefore(wrapper, next.nextElementSibling);
+        }
+        saveCurrentData();
+    }
+
+    function addTransport(btn) { 
+        const list = btn.closest('.transport-section').querySelector('.transport-list');
+        const div = document.createElement('div');
+        div.className = 'transport-pill shadow-sm';
+        div.innerHTML = `
+            <select class="border-0 bg-transparent fw-bold trans-select" style="outline:none;" onchange="saveCurrentData()">
+                <option>🚶</option><option>🚇</option><option>🚌</option><option>🚕</option>
+            </select>
+            <input type="time" class="trans-time-picker" value="00:30" onchange="saveCurrentData()">
+            <button class="btn btn-sm p-0 text-muted ms-1" onclick="this.parentElement.remove(); saveCurrentData();">✕</button>
+        `;
+        list.appendChild(div);
+        saveCurrentData(); 
+    }
+
+    function saveCurrentData() {
+        if (!currentPlanId || isLoading) return;
+        
+        if (window.saveDebounce) clearTimeout(window.saveDebounce);
+        
+        window.saveDebounce = setTimeout(() => {
+            const daysData = [];
+            document.querySelectorAll('.tab-content .tab-pane').forEach(pane => {
+                const activities = [];
+                pane.querySelectorAll('.activity-wrapper').forEach(wrapper => {
+                    const transports = [];
+                    wrapper.querySelectorAll('.transport-pill').forEach(pill => {
+                        const select = pill.querySelector('select');
+                        const timeInput = pill.querySelector('.trans-time-picker');
+                        if(select && timeInput) {
+                            transports.push({ type: select.value, duration: timeInput.value });
+                        }
+                    });
+                    
+                    const timeEl = wrapper.querySelector('.act-time');
+                    const spotEl = wrapper.querySelector('.spot-input');
+                    const detailEl = wrapper.querySelector('.field-detail');
+
+                    activities.push({ 
+                        time: timeEl ? timeEl.value : '', 
+                        spot: spotEl ? spotEl.value : '', 
+                        detail: detailEl ? detailEl.value : '', 
+                        transports: transports 
+                    });
+                });
+                
+                daysData.push({ 
+                    note: pane.querySelector('.day-note-area')?.value || '', 
+                    activities 
+                });
+            });
+            
+            if (daysData.length > 0) {
+                plans[currentPlanId].daysData = daysData; 
+                plans[currentPlanId].days = daysData.length;
+                saveToStorage();
+            }
+        }, 200); 
+    }
+
+    function exportJSONData() {
+        if(Object.keys(plans).length === 0) { alert("目前沒有任何行程資料可以備份。"); return; }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(plans, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `我的行程表備份_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importJSONData(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedPlans = JSON.parse(e.target.result);
+                if(importedPlans && typeof importedPlans === 'object') {
+                    plans = importedPlans;
+                    saveToStorage();
+                    loadPlanList();
+                    if(Object.keys(plans).length > 0) {
+                        loadPlan(Object.keys(plans)[0]);
+                    }
+                    alert("🎉 行程還原成功！");
+                } else {
+                    alert("檔案格式不正確，導入失敗。");
+                }
+            } catch(err) {
+                alert("讀取檔案出錯，請確認該檔案是否為正確的 JSON 備份檔。");
+            }
+            input.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    function removeWrapper(btn) { 
+        if(confirm("刪除此行程點？")) { 
+            btn.closest('.activity-wrapper').remove(); 
+            saveCurrentData(); 
+        } 
+    }
+
+    function searchGoogleVal(val) { 
+        if (val) window.open(`https://www.google.com/search?q=${encodeURIComponent(val)}`, '_blank'); 
+    }
+
+    function searchGoogleSpot(btn) { 
+        searchGoogleVal(btn.closest('.input-group').querySelector('.spot-input').value); 
+    }
+
+    function copyToDay(btn) {
+        const target = prompt("複製到第幾天？", "1");
+        if (!target) return;
+        const targetIdx = parseInt(target) - 1;
+        if (plans[currentPlanId] && plans[currentPlanId].daysData[targetIdx]) {
+            const w = btn.closest('.activity-wrapper');
+            
+            // 直接往變數丟數據，然後執行重新渲染
+            plans[currentPlanId].daysData[targetIdx].activities.push({
+                time: w.querySelector('.act-time')?.value || '', 
+                spot: w.querySelector('.spot-input')?.value || '', 
+                detail: w.querySelector('.field-detail')?.value || '',
+                transports: []
+            });
+            saveToStorage();
+            renderPlanner(plans[currentPlanId].daysData);
+        } else {
+            alert("找不到該天數！");
+        }
+    }
+
+    function openRouteJump(btn, type) {
+        const w = btn.closest('.activity-wrapper'), all = Array.from(w.parentElement.querySelectorAll('.activity-wrapper')), idx = all.indexOf(w);
+        const f = w.querySelector('.spot-input').value, t = (idx < all.length-1) ? all[idx+1].querySelector('.spot-input').value : "";
+        const cf = prompt("從哪出發？", f || "我的位置"), ct = prompt("目的地：", t || "下個點");
+        if(ct) window.open(type==='google' ? `https://www.google.com/maps/dir/${encodeURIComponent(cf)}/${encodeURIComponent(ct)}` : `https://www.amap.com/dir?from[name]=${encodeURIComponent(cf)}&to[name]=${encodeURIComponent(ct)}`, '_blank');
+    }
+
+    function exportPDF() {
+        const el = document.getElementById('print-area');
+        const panes = document.querySelectorAll('.tab-pane');
+        panes.forEach(p => p.classList.add('show', 'active'));
+        el.classList.add('is-exporting');
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: '我的精美行程表.pdf',
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { scale: 3, useCORS: true, letterRendering: true, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(el).save().then(() => {
+            el.classList.remove('is-exporting');
+            panes.forEach((p, i) => { if(i !== 0) p.classList.remove('show', 'active'); });
+        });
+    }
+
+    window.onload = () => {
+        loadPlanList();
+        if(Object.keys(plans).length > 0) loadPlan(Object.keys(plans)[0]); else createNewPlan();
+        updateHeroBg('');
     };
-    html2pdf().set(opt).from(el).save().then(() => {
-        el.classList.remove('is-exporting');
-        panes.forEach((p, i) => { if(i !== 0) p.classList.remove('show', 'active'); });
-    });
-}
-window.onload = () => {
-    loadPlanList();
-    if(Object.keys(plans).length > 0) loadPlan(Object.keys(plans)[0]); else createNewPlan();
-    updateHeroBg('');
-};
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </script>
 </body>
 </html>
