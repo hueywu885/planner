@@ -96,6 +96,12 @@
             color: inherit;
             font-weight: bold;
         }
+        .btn-delete-plan {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-weight: bold;
+        }
         .activity-wrapper {
             background: white;
             border-radius: 16px;
@@ -144,17 +150,17 @@
             background: rgba(0,0,0,0.4);
             z-index: 999;
         }
+
+        #print-output-container {
+            display: none;
+        }
+
         @media (max-width: 991.98px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.active { transform: translateX(0); }
             .main-content { margin-left: 0; padding: 15px; }
             .toggle-btn { display: block; }
             .sidebar-overlay.active { display: block; }
-        }
-        @media print {
-            .no-print { display: none !important; }
-            .main-content { margin-left: 0 !important; padding: 0 !important; }
-            body { background: white; }
         }
     </style>
 </head>
@@ -168,10 +174,8 @@
         <button class="btn btn-danger w-100 mb-3 fw-bold py-2 shadow-sm" style="background:var(--primary); border:none;" onclick="createNewPlan()">+ 新建旅程</button>
         
         <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-outline-secondary btn-sm w-50" onclick="exportJSONData()">📥 備份行程</button>
-            <label class="btn btn-outline-secondary btn-sm w-50 m-0 text-center">
-                📤 還原行程 <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSONData(this)">
-            </label>
+            <button class="btn btn-outline-secondary btn-sm w-50" onclick="exportTextData()">📥 複製文字備份</button>
+            <button class="btn btn-outline-secondary btn-sm w-50" onclick="importTextData()">📤 貼上還原行程</button>
         </div>
 
         <div class="dropdown mb-4">
@@ -217,8 +221,29 @@
 
         <div class="tab-content" id="dayContent"></div>
 
-        <button class="btn btn-primary mt-4 no-print shadow" style="border-radius:12px; padding:12px 25px;" onclick="exportPDF()">🖨️ 匯出 PDF 行程表</button>
+        <button class="btn btn-primary mt-4 no-print shadow" style="border-radius:12px; padding:12px 25px;" onclick="exportPDF()">🖨️ 匯出文字版 PDF 行程表</button>
     </div>
+
+    <div class="modal fade" id="textDataModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 15px;">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold" id="modalTitle">行程數據通訊代碼</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-2" id="modalDesc">請複製下方文字並妥善儲存：</p>
+                    <textarea class="form-control bg-light border-0" id="textDataArea" rows="12" style="border-radius: 10px; font-family: monospace; font-size: 13px;"></textarea>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal" style="border-radius: 8px;">關閉</button>
+                    <button type="button" class="btn btn-primary fw-bold" id="modalActionBtn" style="border-radius: 8px;">一鍵複製文字</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-output-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -226,6 +251,15 @@
     let currentPlanId = null;
     let plans = JSON.parse(localStorage.getItem('travel_v17_final')) || {};
     let isLoading = false; 
+    let textModal = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        textModal = new bootstrap.Modal(document.getElementById('textDataModal'));
+        loadPlanList();
+        if(Object.keys(plans).length > 0) {
+            loadPlan(Object.keys(plans)[0]);
+        }
+    });
 
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('active');
@@ -269,7 +303,7 @@
         currentPlanId = id; 
         const p = plans[id];
         
-        isLoading = true; // 鎖定：防加載時誤觸自動保存覆蓋
+        isLoading = true; 
         document.getElementById('startDate').value = p.date || '';
         document.getElementById('loc').value = p.location || '';
         document.getElementById('days').value = p.days || 1;
@@ -329,7 +363,6 @@
         saveCurrentData();
     }
 
-    // 核心改造：100% 依據數據直接渲染，絕不產生異步時序差
     function renderPlanner(daysData) {
         const tabH = document.getElementById('dayTabs'), contH = document.getElementById('dayContent');
         tabH.innerHTML = ''; contH.innerHTML = '';
@@ -338,7 +371,7 @@
         daysData.forEach((day, i) => {
             const id = `d${i}`, curDate = new Date(dStart); 
             curDate.setDate(dStart.getDate() + i);
-            const dateStr = curDate.toLocaleDateString('zh-TW', {month:'short', day:'numeric'});
+            const dateStr = curDate.toLocaleDateString('zh-TW', {month:'short', day:'numeric', weekday:'short'});
             
             tabH.innerHTML += `<li class="nav-item"><button class="nav-link ${i===0?'active':''}" data-bs-toggle="tab" data-bs-target="#${id}">D${i+1} (${dateStr})</button></li>`;
             
@@ -387,7 +420,6 @@
                         </div>`;
                 });
             } else {
-                // 如果是空行程，至少留一格空白點方便填寫
                 actHtml = `
                     <div class="activity-wrapper">
                         <div class="d-flex align-items-center gap-2 mb-3">
@@ -483,7 +515,6 @@
 
     function saveCurrentData() {
         if (!currentPlanId || isLoading) return;
-        
         if (window.saveDebounce) clearTimeout(window.saveDebounce);
         
         window.saveDebounce = setTimeout(() => {
@@ -526,24 +557,51 @@
         }, 200); 
     }
 
-    function exportJSONData() {
+    // 📥 改造後功能：導出為純文字
+    function exportTextData() {
         if(Object.keys(plans).length === 0) { alert("目前沒有任何行程資料可以備份。"); return; }
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(plans, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `我的行程表備份_${new Date().toISOString().slice(0,10)}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+        
+        document.getElementById('modalTitle').innerText = "📥 複製純文字備份密碼";
+        document.getElementById('modalDesc').innerText = "請複製下方框內的所有文字，儲存到你的記事本或發送到聊天群組中，這代表你所有的行程紀錄：";
+        
+        // 將 JSON 轉為簡潔易讀的純字串
+        const base64Str = btoa(unescape(encodeURIComponent(JSON.stringify(plans))));
+        const outputArea = document.getElementById('textDataArea');
+        outputArea.value = base64Str;
+        outputArea.readOnly = true;
+
+        const actionBtn = document.getElementById('modalActionBtn');
+        actionBtn.innerText = "一鍵複製文字";
+        actionBtn.className = "btn btn-primary fw-bold";
+        actionBtn.onclick = function() {
+            outputArea.select();
+            document.execCommand('copy');
+            actionBtn.innerText = "✓ 複製成功！";
+            actionBtn.className = "btn btn-success fw-bold";
+        };
+
+        textModal.show();
     }
 
-    function importJSONData(input) {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
+    // 📤 改造後功能：導入純文字並還原
+    function importTextData() {
+        document.getElementById('modalTitle').innerText = "📤 還原純文字行程表";
+        document.getElementById('modalDesc').innerText = "請在下方空白框內貼上你先前複製的備份文字代碼，然後點擊下方還原按鈕：";
+        
+        const outputArea = document.getElementById('textDataArea');
+        outputArea.value = "";
+        outputArea.readOnly = false;
+        outputArea.placeholder = "請在此處按 Ctrl+V 貼上代碼...";
+
+        const actionBtn = document.getElementById('modalActionBtn');
+        actionBtn.innerText = "開始還原數據";
+        actionBtn.className = "btn btn-danger fw-bold";
+        actionBtn.onclick = function() {
+            const val = outputArea.value.trim();
+            if(!val) { alert("請輸入有效的備份文字！"); return; }
             try {
-                const importedPlans = JSON.parse(e.target.result);
+                const decodedJson = decodeURIComponent(escape(atob(val)));
+                const importedPlans = JSON.parse(decodedJson);
                 if(importedPlans && typeof importedPlans === 'object') {
                     plans = importedPlans;
                     saveToStorage();
@@ -551,16 +609,17 @@
                     if(Object.keys(plans).length > 0) {
                         loadPlan(Object.keys(plans)[0]);
                     }
-                    alert("🎉 行程還原成功！");
+                    textModal.hide();
+                    alert("🎉 行程還原成功！已刷新列表。");
                 } else {
-                    alert("檔案格式不正確，導入失敗。");
+                    alert("代碼格式不符合，還原失敗。");
                 }
             } catch(err) {
-                alert("讀取檔案出錯，請確認該檔案是否為正確的 JSON 備份檔。");
+                alert("還原出錯！請確認貼上的文字是完整、沒有漏複製的備份代碼。");
             }
-            input.value = '';
         };
-        reader.readAsText(file);
+
+        textModal.show();
     }
 
     function removeWrapper(btn) { 
@@ -584,8 +643,6 @@
         const targetIdx = parseInt(target) - 1;
         if (plans[currentPlanId] && plans[currentPlanId].daysData[targetIdx]) {
             const w = btn.closest('.activity-wrapper');
-            
-            // 直接往變數丟數據，然後執行重新渲染
             plans[currentPlanId].daysData[targetIdx].activities.push({
                 time: w.querySelector('.act-time')?.value || '', 
                 spot: w.querySelector('.spot-input')?.value || '', 
@@ -607,28 +664,91 @@
     }
 
     function exportPDF() {
-        const el = document.getElementById('print-area');
-        const panes = document.querySelectorAll('.tab-pane');
-        panes.forEach(p => p.classList.add('show', 'active'));
-        el.classList.add('is-exporting');
+        if (!currentPlanId || !plans[currentPlanId]) { alert("沒有可導出的行程數據！"); return; }
+        
+        const plan = plans[currentPlanId];
+        const printContainer = document.getElementById('print-output-container');
+        const dStart = document.getElementById('startDate').value ? new Date(document.getElementById('startDate').value) : null;
+        
+        let htmlContent = `
+            <div style="padding: 20px; font-family: 'Noto Sans TC', sans-serif; color: #2b2d42; background: #fff;">
+                <h2 style="text-align: center; margin-bottom: 5px; font-weight: 700;">${plan.location || '精美旅遊行程表'}</h2>
+                <p style="text-align: center; color: #718096; font-size: 14px; margin-bottom: 25px;">
+                    出發日期：${plan.date || '未設定'}  |  總天數：${plan.days || 1} 天
+                </p>
+        `;
+
+        plan.daysData.forEach((day, i) => {
+            let dayDateStr = '';
+            if (dStart) {
+                const curDate = new Date(dStart);
+                curDate.setDate(dStart.getDate() + i);
+                dayDateStr = `（${curDate.toLocaleDateString('zh-TW', {month:'long', day:'numeric', weekday:'long'})}）`;
+            }
+
+            htmlContent += `
+                <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                    <h4 style="background: #f7fafc; padding: 8px 12px; border-left: 5px solid #ff6b6b; margin-bottom: 12px; font-weight: bold;">
+                        第 ${i + 1} 天 ${dayDateStr}
+                    </h4>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #cbd5e0; background: #edf2f7;">
+                                <th style="padding: 10px; width: 15%; text-align: left; font-size: 14px;">時間</th>
+                                <th style="padding: 10px; width: 35%; text-align: left; font-size: 14px;">行程項目/景點</th>
+                                <th style="padding: 10px; width: 50%; text-align: left; font-size: 14px;">門票/預約/備註事項</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            if(day.activities && day.activities.length > 0) {
+                day.activities.forEach(act => {
+                    let transText = '';
+                    if(act.transports && act.transports.length > 0) {
+                        transText = ` <span style="color:#718096; font-size:12px;">(${act.transports.map(t=>t.type + t.duration).join(' → ')})</span>`;
+                    }
+                    htmlContent += `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 10px; font-weight: bold; color:#ff6b6b; font-size: 14px;">${act.time || '--:--'}</td>
+                            <td style="padding: 10px; font-weight: 500; font-size: 14px;">${act.spot || '未指定景點'}${transText}</td>
+                            <td style="padding: 10px; color: #4a5568; font-size: 13px;">${act.detail || ''}</td>
+                        </tr>`;
+                });
+            } else {
+                htmlContent += `<tr><td colspan="3" style="padding: 15px; text-align: center; color: #a0aec0; font-size: 13px;">本日暫無行程安排</td></tr>`;
+            }
+
+            htmlContent += `
+                        </tbody>
+                    </table>`;
+
+            if (day.note) {
+                htmlContent += `
+                    <div style="background: #fffaf0; border: 1px dashed #feebc8; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #dd6b20; margin-top: 5px;">
+                        <strong>💡 當日備忘筆記：</strong> ${day.note.replace(/\n/g, '<br>')}
+                    </div>`;
+            }
+
+            htmlContent += `</div>`;
+        });
+
+        htmlContent += `</div>`;
+        
+        printContainer.innerHTML = htmlContent;
+        printContainer.style.display = 'block';
+
         const opt = {
-            margin: [10, 10, 10, 10],
-            filename: '我的精美行程表.pdf',
-            image: { type: 'jpeg', quality: 1 },
-            html2canvas: { scale: 3, useCORS: true, letterRendering: true, scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin:       [10, 10, 10, 10],
+            filename:     `${plan.location || '行程表'}_純文字版.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-        html2pdf().set(opt).from(el).save().then(() => {
-            el.classList.remove('is-exporting');
-            panes.forEach((p, i) => { if(i !== 0) p.classList.remove('show', 'active'); });
+
+        html2pdf().set(opt).from(printContainer).save().then(() => {
+            printContainer.style.display = 'none';
         });
     }
-
-    window.onload = () => {
-        loadPlanList();
-        if(Object.keys(plans).length > 0) loadPlan(Object.keys(plans)[0]); else createNewPlan();
-        updateHeroBg('');
-    };
     </script>
 </body>
 </html>
